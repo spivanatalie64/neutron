@@ -10,6 +10,15 @@ sdk-extensions:
 
 command: NEUTRON_INTERNAL_APP_NAME
 
+# Fixes #9
+# See https://github.com/flatpak/flatpak-docs/blob/master/docs/extension.rst#unmaintained-flatpak-extensions
+add-extensions:
+  org.mozilla.firefox.systemconfig:
+    directory: etc/NEUTRON_INTERNAL_APP_NAME
+    no-autodownload: true
+cleanup-commands:
+  - mkdir -p ${FLATPAK_DEST}/etc/NEUTRON_INTERNAL_APP_NAME
+
 finish-args:
     - --share=ipc                                             
     - --share=network                                         
