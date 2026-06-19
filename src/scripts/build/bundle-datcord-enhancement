@@ -1,0 +1,38 @@
+#!/bin/bash
+
+# ============================================================
+# Bundle Datcord Enhancement Suite as a built-in extension
+# ============================================================
+
+set -euo pipefail
+
+EXT_SOURCE="../../resources/extensions/datcord-enhancement"
+EXT_DEST="mozilla-unified/browser/extensions/datcord-enhancement"
+
+if [ -d "$EXT_DEST" ]; then
+    rm -r "$EXT_DEST"
+fi
+
+echo "Bundling Datcord Enhancement Suite extension..."
+
+# Copy extension source
+cp -r "$EXT_SOURCE" "$EXT_DEST"
+
+# Register extension in moz.build
+pushd mozilla-unified
+if [ -f browser/extensions/moz.build.bak ]; then
+    cp browser/extensions/moz.build.bak browser/extensions/moz.build
+fi
+cp browser/extensions/moz.build browser/extensions/moz.build.bak
+
+# Check if already registered
+if ! grep -q "datcord-enhancement" browser/extensions/moz.build; then
+    echo "
+DIRS += [
+    \"datcord-enhancement\",
+]" >> browser/extensions/moz.build
+fi
+
+popd
+
+echo "Datcord Enhancement Suite bundled successfully"

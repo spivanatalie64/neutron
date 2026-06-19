@@ -1,0 +1,123 @@
+--- a/toolkit/components/extensions/ExtensionContent.cpp
++++ b/toolkit/components/extensions/ExtensionContent.cpp
+@@ -1,3 +1,41 @@
++/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
++/* This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
++
++/**
++ * Datcord patch: Enable MAIN world content script execution
++ * 
++ * This patch adds support for the "world": "MAIN" property in
++ * content_scripts manifest entries, matching Chrome's behavior.
++ * 
++ * When world is "MAIN", the content script is injected directly
++ * into the page's JavaScript context instead of Firefox's isolated
++ * Xray wrapper. This is required for Discord client mods like
++ * Vencord that need to patch Discord's internal Webpack module system.
++ *
++ * Based on Chrome's MV3 implementation where "world": "MAIN" allows
++ * scripts to run in the page's execution context alongside page scripts.
++ */
++
++#ifndef MAIN_WORLD_CONTENT_SCRIPTS_H
++#define MAIN_WORLD_CONTENT_SCRIPTS_H
++
++// Forward declarations
++class nsPIDOMWindowOuter;
++class mozIDOMWindowProxy;
++
++namespace mozilla {
++namespace extensions {
++
++// Check if a content script should run in the MAIN world
++bool ShouldRunInMainWorld(const nsAString& aWorld);
++
++// Execute a script in the MAIN world (page context)
++void ExecuteInMainWorld(nsPIDOMWindowOuter* aWindow,
++                        const nsAString& aScript);
++
++} // namespace extensions
++} // namespace mozilla
++
++#endif /* MAIN_WORLD_CONTENT_SCRIPTS_H */
+--- a/toolkit/components/extensions/ExtensionContent.cpp
++++ b/toolkit/components/extensions/ExtensionContent.cpp
+@@ -486,6 +486,39 @@ void ExtensionContent::RunContentScript(
+     return;
+   }
+ 
++  // Datcord: Support MAIN world execution for Discord modding
++  nsAutoString world;
++  script->GetWorld(world);
++  
++  if (world.EqualsLiteral("MAIN")) {
++    nsCOMPtr<nsPIDOMWindowOuter> outer = doc->GetWindow();
++    if (outer) {
++      nsCOMPtr<nsIDOMWindowUtils> utils =
++        nsComponentManager::CreateInstance("@mozilla.org/dom/window-utils;1",
++                                           NS_GET_IID(nsIDOMWindowUtils));
++      if (utils) {
++        // Execute the script directly in the page context
++        nsAutoString scriptStr;
++        script->GetJS(scriptStr);
++        
++        // Create a sandbox that's actually the page context
++        AutoJSAPI jsapi;
++        if (jsapi.Init(outer->GetGlobalJSObject())) {
++          JSContext* cx = jsapi.cx();
++          JS::RootedValue v(cx);
++          JS::CompileOptions options(cx);
++          options.setFileAndLine(script->URL(), 1);
++          
++          JS::Rooted<JSObject*> global(cx, JS::CurrentGlobalOrNull(cx));
++          if (global) {
++            JS::Evaluate(cx, options, scriptStr.get(), scriptStr.Length(), &v);
++          }
++        }
++      }
++    }
++    return;
++  }
++
+   // The finest-grained sandbox
+   // We want a separate compartment per origin, but we also want to make sure
+   // that different windows within the same origin can see each other's
+--- a/toolkit/components/extensions/ExtensionContent.h
++++ b/toolkit/components/extensions/ExtensionContent.h
+@@ -132,6 +132,10 @@ class ContentScript {
+                          nsAtom* aExecutionWorld = nullptr);
+   virtual ~ContentScript() = default;
+ 
++  // Datcord: Get/set the execution world (MAIN or ISOLATED)
++  const nsAString& World() const { return mWorld; }
++  void SetWorld(const nsAString& aWorld) { mWorld = aWorld; }
++
+   ...
+   }
+ 
+@@ -142,6 +146,7 @@ class ContentScript {
+   nsString mSource;
+   nsString mJSSource;
+   nsString mCSSSource;
++  nsString mWorld;  // Datcord: "MAIN" or "ISOLATED"
+   ...
+   }
+ 
+--- a/toolkit/components/extensions/schema.json
++++ b/toolkit/components/extensions/schema.json
+@@ -1230,6 +1230,13 @@
+           "type": "array",
+           "optional": true,
+           "description": "The list of CSS files to inject"
++        },
++        "world": {
++          "type": "string",
++          "optional": true,
++          "default": "ISOLATED",
++          "enum": ["ISOLATED", "MAIN"],
++          "description": "The execution world for the content script. MAIN runs in the page context."
+         }
+       }
+     }

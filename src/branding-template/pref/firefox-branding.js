@@ -43,3 +43,57 @@ pref("browser.sessionstore.resume_from_crash", false);
 pref("browser.sessionstore.collect_session_storage", false);
 pref("browser.sessionstore.restore_on_demand", false);
 pref("browser.startup.couldRestoreSession.count", -1);
+
+// === DATCRD REFINEMENTS ===
+
+// --- DISCORD VOICE/VIDEO ---
+pref("media.peerconnection.enabled", true);
+pref("media.getusermedia.browser.enabled", true);
+pref("media.getusermedia.screensharing.enabled", true);
+pref("media.navigator.permission.disabled", true);
+pref("media.autoplay.default", 0);
+pref("media.autoplay.blocking_policy", 0);
+
+// --- WEBGL / HARDWARE ACCELERATION ---
+pref("webgl.disabled", false);
+pref("webgl.force-enabled", true);
+pref("layers.acceleration.force-enabled", true);
+pref("gfx.webrender.all", true);
+
+// --- NOTIFICATIONS ---
+pref("dom.webnotifications.enabled", true);
+pref("dom.webnotifications.requireuserinteraction", false);
+pref("alerts.useSystemBackend", true);
+
+// --- DISABLE TELEMETRY ---
+pref("datareporting.policy.dataSubmissionEnabled", false);
+pref("datareporting.healthreport.uploadEnabled", false);
+pref("toolkit.telemetry.archive.enabled", false);
+pref("toolkit.telemetry.batchPingEnabled", false);
+pref("toolkit.telemetry.enabled", false);
+pref("toolkit.telemetry.unified", false);
+pref("toolkit.telemetry.server", "data:,");
+
+// --- CACHE FOR DISCORD ---
+pref("browser.cache.disk.capacity", 512000);
+pref("browser.cache.memory.capacity", 65536);
+
+// --- NETWORK ---
+pref("network.http.max-connections", 256);
+pref("network.http.max-connections-per-server", 64);
+pref("network.http.max-persistent-connections-per-server", 16);
+pref("network.websocket.max-connections", 200);
+
+// --- DISCORD CAPTCHA / POPUPS ---
+pref("dom.disable_open_during_load", false);
+pref("dom.popup_allowed_events", "click dblclick mousedown pointerdown");
+
+// --- STORAGE ---
+pref("dom.indexedDB.enabled", true);
+pref("dom.storage.default_quota", 2048);
+
+// --- DISABLE POCKET ETC ---
+pref("extensions.pocket.enabled", false);
+pref("browser.newtabpage.activity-stream.feeds.snippets", false);
+pref("browser.newtabpage.activity-stream.showSponsored", false);
+pref("browser.newtabpage.activity-stream.showSponsoredTopSites", false);

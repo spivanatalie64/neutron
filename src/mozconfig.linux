@@ -1,12 +1,133 @@
+# ============================================================
+# Datcord - NUCLEAR OPTIMIZED mozconfig
+# Strips Firefox to the absolute minimum for Discord
+# Every flag here is carefully chosen - Discord needs:
+#   WebRTC, WebAudio, WebGL, Canvas, WebSocket,
+#   IndexedDB, getUserMedia, WebAssembly, CSS features,
+#   Media Source Extensions, Opus/H264 codecs
+# ============================================================
+
+# --- BRANDING ---
 ac_add_options --with-app-name=NEUTRON_INTERNAL_APP_NAME
 ac_add_options --with-branding=browser/branding/NEUTRON_INTERNAL_APP_NAME
-
 ac_add_options --with-unsigned-addon-scopes=app,system
 export MOZ_REQUIRE_SIGNING=
 
-ac_add_options --disable-tests
+# --- OPTIMIZATION LEVEL: MAXIMUM ---
+ac_add_options --enable-optimize="-O3 -march=native -mtune=native -pipe -flto=auto"
+ac_add_options --enable-lto
 ac_add_options --disable-debug
-ac_add_options --enable-optimize
+ac_add_options --disable-tests
 
+# --- STRIP EVERYTHING UNNECESSARY ---
+
+## NO ACCESSIBILITY (Discord doesn't need a11y tools at the engine level)
+ac_add_options --disable-accessibility
+
+## NO CRASH REPORTING
+ac_add_options --disable-crashreporter
+ac_add_options --disable-elf-hack
+
+## NO SAFE BROWSING
+ac_add_options --disable-safe-browsing
+
+## NO UPDATER (we handle updates through our launcher)
 ac_add_options --disable-updater
+
+## NO DEFAULT BROWSER AGENT
 ac_add_options --disable-default-browser-agent
+
+## NO PARENTAL CONTROLS
+ac_add_options --disable-parental-controls
+
+## NO PRINTING
+ac_add_options --disable-print
+ac_add_options --disable-print-preview
+
+## NO POCKET
+ac_add_options --disable-pocket
+
+## NO SYNC (Discord has its own sync)
+ac_add_options --disable-sync
+
+## NO SEARCH ENGINES (Discord doesn't need Firefox search)
+ac_add_options --disable-search
+
+## NO TELEMETRY
+ac_add_options --disable-telemetry
+
+## NO GEO (Discord doesn't need geolocation)
+ac_add_options --disable-geolocation
+
+## NO WEBIDE/DEVTOOLS (strip all devtools - ship lean)
+ac_add_options --disable-devtools
+ac_add_options --disable-webide
+
+## NO SPELLCHECK (Discord has built-in spellcheck)
+ac_add_options --disable-spellcheck
+
+## NO JS DEBUGGER/PROFILER
+ac_add_options --disable-js-profiling
+ac_add_options --disable-vtune
+
+## NO REMOTE SERVICES
+ac_add_options --disable-remote-service
+ac_add_options --disable-remote-agent
+
+## NO NEWSPACK/CONTEXTUAL SERVICES
+ac_add_options --disable-necko-wifi
+
+## NO WEBPAY
+ac_add_options --disable-webpay
+
+## NO JS SHELL (we don't need standalone js)
+ac_add_options --disable-js-shell
+
+## NO STATIC ANALYSIS
+ac_add_options --disable-stylo-unbundled
+
+## NO RUST SIMD (save on binary size)
+ac_add_options --disable-rust-simd
+
+## NO WEBRENDER SNAPSHOTS (save memory)
+ac_add_options --disable-webrender-snapshots
+
+## NO BANDWIDTH MANAGER (unnecessary for single-site app)
+ac_add_options --disable-bandit
+
+## NO FUZZING
+ac_add_options --disable-fuzzing
+
+## NO RUST DEVELOPMENT TOOLS
+ac_add_options --disable-rust-debug
+
+# --- FEATURES DISCORD NEEDS (KEEP THESE) ---
+
+## MEDIA: Discord voice/video calls need WebRTC + WebAudio
+# ac_add_options --enable-webrtc (default on)
+# ac_add_options --enable-webaudio (default on)
+
+## GRAPHICS: Discord UI needs WebGL, Canvas, WebRender
+# ac_add_options --enable-webgl (default on)
+# ac_add_options --enable-webrender (we enable via pref)
+
+## NETWORK: Discord needs WebSocket, fetch, SSE
+# All default on
+
+## STORAGE: Discord needs IndexedDB (2GB+)
+# ac_add_options --enable-indexeddb (default on)
+
+## CODECS: Opus for voice, H264 for video, VP8/VP9 for streaming
+# All default on
+
+# --- RUST OPTIMIZATIONS ---
+ac_add_options --enable-rust-optimize
+export CARGO_PROFILE_RELEASE_LTO=true
+export CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1
+export CARGO_PROFILE_RELEASE_PANIC="abort"
+export RUSTFLAGS="-C target-cpu=native -C link-time-optimization=true -C panic=abort"
+
+# --- BUILD SPEED ---
+ac_add_options --with-ccache=sccache
+mk_add_options MOZ_MAKE_FLAGS="-j$(nproc)"
+export MOZ_PARALLEL_BUILD=1
